@@ -1,9 +1,5 @@
 import 'package:chessground/chessground.dart';
 import 'package:dartchess/dartchess.dart' as d;
-import 'package:chessground/chessground.dart';
-import 'package:dartchess/dartchess.dart' as d;
-import 'package:chessground/chessground.dart';
-import 'package:dartchess/dartchess.dart' as d;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lichess_mobile/src/model/engine/offline_game_service.dart';
@@ -62,7 +58,7 @@ class _OfflineGamePageState extends ConsumerState<OfflineGamePage> {
                         ? const CircularProgressIndicator()
                         : Chessground(
                             fen: game.fen,
-                            orientation: Side.white,
+                            orientation: d.Side.white,
                             onMove: (move) {
                               final uci = '${move.from.name}${move.to.name}${move.promotion?.name ?? ''}';
                               service.makeMove(uci);
