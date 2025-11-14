@@ -37,6 +37,12 @@ jobs:
           flutter doctor -v
           echo "::endgroup::"
 
+      - name: Clean project
+        run: flutter clean
+
+      - name: Upgrade dependencies
+        run: flutter pub upgrade
+
       - name: Install dependencies
         run: |
           echo "::group::Flutter Pub Get"
