@@ -28,7 +28,7 @@ class OfflineGameService {
 
   void newGame() {
     _engine?.ensureInitialized();
-    _game = d.Position.initial();
+    _game = d.Position.fromFen(d.kInitialFEN);
     _gameController.add(_game!);
   }
 
@@ -42,8 +42,8 @@ class OfflineGameService {
   Future<void> makeMove(String uciMove) async {
     if (_game == null || isComputerThinking.value) return;
 
-    final move = d.Move.fromUci(uciMove);
-    if (_game!.isLegal(move)) {
+    final move = d.Move.parse(uciMove);
+    if (move != null && _game!.isLegal(move)) {
       _game = _game!.play(move);
       _gameController.add(_game!);
       
@@ -64,8 +64,8 @@ class OfflineGameService {
     );
 
     if (bestMoveUci.isNotEmpty) {
-      final move = d.Move.fromUci(bestMoveUci);
-      if (_game!.isLegal(move)) {
+      final move = d.Move.parse(bestMoveUci);
+      if (move != null && _game!.isLegal(move)) {
         _game = _game!.play(move);
         _gameController.add(_game!);
       }
