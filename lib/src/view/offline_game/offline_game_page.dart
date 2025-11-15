@@ -56,7 +56,7 @@ class _OfflineGamePageState extends ConsumerState<OfflineGamePage> {
                     aspectRatio: 1,
                     child: game == null
                         ? const CircularProgressIndicator()
-                        : Chessground(
+                        : const Chessground(
                             fen: game.fen,
                             orientation: d.Side.white,
                             onMove: (move) {

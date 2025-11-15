@@ -28,7 +28,7 @@ class OfflineGameService {
 
   void newGame() {
     _engine?.ensureInitialized();
-    _game = d.Chess.fromFEN(d.kInitialFEN);
+    _game = d.Chess.fromSetup(d.Setup.parseFen(d.kInitialFEN));
     _gameController.add(_game!);
   }
 
