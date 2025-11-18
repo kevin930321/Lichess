@@ -143,10 +143,12 @@ class _GameBodyState extends ConsumerState<GameBody>
   bool get alwaysRequestCloudEval => false;
 
   @override
-  UciPath get currentPath => UciPath.fromGame(
-        _gameState!.game,
-        _gameState!.stepCursor,
-      );
+  UciPath get currentPath {
+    final path = UciPath.fromNodeList(
+      _root.mainline.take(_gameState!.stepCursor),
+    );
+    return path;
+  }
 
   @override
   Position get currentPosition => _gameState!.currentPosition;
@@ -318,7 +320,15 @@ class _GameBodyState extends ConsumerState<GameBody>
             : boardPreferences.pieceAnimationDuration;
 
         if (gamePrefs.enableRealTimeAnalysis == true) {
-          _root = Root.fromPgnGame(gameState.game.toPgnGame);
+          _root = Root.fromPgnGame(
+            PgnGame(
+              headers: {
+                'Variant': gameState.game.meta.variant.label,
+                'FEN': gameState.game.initialFen,
+              },
+              moves: PgnNode.fromGame(gameState.game),
+            ),
+          );
           _gameState = gameState;
           requestEval();
         } else {
@@ -349,7 +359,7 @@ class _GameBodyState extends ConsumerState<GameBody>
                         isLocalEngineAvailable: isEngineAvailable(evaluationPrefs),
                         orientation: youAre,
                         position: currentPosition,
-                        savedEval: currentPosition.eval,
+                        savedEval: _root.nodeAt(currentPath).eval,
                         serverEval: null,
                       ),
                     ),
@@ -358,7 +368,7 @@ class _GameBodyState extends ConsumerState<GameBody>
                       onTapMove: (move) {
                         ref.read(ctrlProvider.notifier).userMove(move);
                       },
-                      savedEval: currentPosition.eval,
+                      savedEval: _root.nodeAt(currentPath).eval,
                       isGameOver: currentPosition.isGameOver,
                     ),
                 ],
@@ -458,7 +468,7 @@ class _GameBodyState extends ConsumerState<GameBody>
         if (context.mounted) {
           // when Zen mode is disabled, reload chat data
           ref
-              .read(gameControllerProvider(gameId).notifier)
+              .read(gameControllerProvider(widget.gameId).notifier)
               .onToggleChat(state.requireValue.chatOptions != null);
         }
       }
