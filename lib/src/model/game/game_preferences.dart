@@ -32,13 +32,17 @@ class GamePreferences extends _$GamePreferences with PreferencesStorage<GamePref
   Future<void> toggleBlindfoldMode() {
     return save(state.copyWith(blindfoldMode: !(state.blindfoldMode ?? false)));
   }
+
+  Future<void> toggleRealTimeAnalysis() {
+    return save(state.copyWith(enableRealTimeAnalysis: !(state.enableRealTimeAnalysis ?? false)));
+  }
 }
 
 @Freezed(fromJson: true, toJson: true)
 sealed class GamePrefs with _$GamePrefs implements Serializable {
-  const factory GamePrefs({bool? enableChat, bool? blindfoldMode}) = _GamePrefs;
+  const factory GamePrefs({bool? enableChat, bool? blindfoldMode, bool? enableRealTimeAnalysis}) = _GamePrefs;
 
-  static const defaults = GamePrefs(enableChat: true);
+  static const defaults = GamePrefs(enableChat: true, enableRealTimeAnalysis: false);
 
   factory GamePrefs.fromJson(Map<String, dynamic> json) => _$GamePrefsFromJson(json);
 }

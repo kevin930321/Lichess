@@ -74,6 +74,13 @@ class GameSettings extends ConsumerWidget {
                 ref.read(gamePreferencesProvider.notifier).toggleBlindfoldMode();
               },
             ),
+            SwitchSettingTile(
+              title: Text(context.l10n.toggleAnalysis),
+              value: gamePrefs.enableRealTimeAnalysis ?? false,
+              onChanged: (value) {
+                ref.read(gamePreferencesProvider.notifier).toggleRealTimeAnalysis();
+              },
+            ),
             ListTile(
               title: Text(context.l10n.mobileBoardSettings),
               trailing: const CupertinoListTileChevron(),

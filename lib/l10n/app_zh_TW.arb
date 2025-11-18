@@ -604,6 +604,7 @@
   "level": "難度",
   "strength": "強度",
   "toggleTheChat": "聊天開關",
+  "toggleAnalysis": "即時分析",
   "chat": "聊天",
   "resign": "認輸",
   "checkmate": "將死",

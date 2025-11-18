@@ -1119,6 +1119,7 @@
   "level": "Level",
   "strength": "Strength",
   "toggleTheChat": "Toggle the chat",
+  "toggleAnalysis": "Real-time analysis",
   "chat": "Chat",
   "resign": "Resign",
   "checkmate": "Checkmate",

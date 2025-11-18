@@ -10,6 +10,9 @@ import 'package:lichess_mobile/src/model/account/account_repository.dart';
 import 'package:lichess_mobile/src/model/account/ongoing_game.dart';
 import 'package:lichess_mobile/src/model/common/id.dart';
 import 'package:lichess_mobile/src/model/common/speed.dart';
+import 'package:lichess_mobile/src/model/engine/evaluation_mixin.dart';
+import 'package:lichess_mobile/src/model/engine/evaluation_preferences.dart';
+import 'package:lichess_mobile/src/model/engine/evaluation_service.dart';
 import 'package:lichess_mobile/src/model/game/game_controller.dart';
 import 'package:lichess_mobile/src/model/game/game_preferences.dart';
 import 'package:lichess_mobile/src/model/game/playable_game.dart';
@@ -23,6 +26,8 @@ import 'package:lichess_mobile/src/utils/l10n_context.dart';
 import 'package:lichess_mobile/src/view/analysis/analysis_screen.dart';
 import 'package:lichess_mobile/src/view/chat/chat_screen.dart';
 import 'package:lichess_mobile/src/view/game/correspondence_clock_widget.dart';
+import 'package:lichess_mobile/src/view/engine/engine_gauge.dart';
+import 'package:lichess_mobile/src/view/engine/engine_lines.dart';
 import 'package:lichess_mobile/src/view/game/game_loading_board.dart';
 import 'package:lichess_mobile/src/view/game/game_player.dart';
 import 'package:lichess_mobile/src/view/game/game_result_dialog.dart';
@@ -48,7 +53,7 @@ typedef LoadingPosition = ({String? fen, Move? lastMove, Side? orientation});
 ///
 /// Handles the immersive mode through focus detection, and the pop scope to
 /// prevent the user from going back to the previous screen.
-class GameBody extends ConsumerWidget {
+class GameBody extends ConsumerStatefulWidget {
   const GameBody({
     required this.gameId,
     this.loadingPosition,
@@ -89,8 +94,79 @@ class GameBody extends ConsumerWidget {
   final void Function(PlayableGame game) onNewOpponentCallback;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final ctrlProvider = gameControllerProvider(gameId);
+  ConsumerState<GameBody> createState() => _GameBodyState();
+}
+
+class GameStateWithAnalysis extends GameState with EvaluationMixinState {
+  GameStateWithAnalysis(GameState gameState)
+      : super(
+          game: gameState.game,
+          stepCursor: gameState.stepCursor,
+          canPremove: gameState.canPremove,
+          premove: gameState.premove,
+          liveClock: gameState.liveClock,
+          chatOptions: gameState.chatOptions,
+          isZenModeActive: gameState.isZenModeActive,
+          moveToConfirm: gameState.moveToConfirm,
+          promotionMove: gameState.promotionMove,
+          redirectGameId: gameState.redirectGameId,
+          opponentLeftCountdown: gameState.opponentLeftCountdown,
+        );
+
+  @override
+  bool get alwaysRequestCloudEval => false;
+
+  @override
+  Position get currentPosition => game.currentPosition;
+
+  @override
+  bool isEngineAvailable(EngineEvaluationPrefState prefs) =>
+      game.playable && prefs.isEnabled;
+}
+
+class _GameBodyState extends ConsumerState<GameBody> with EngineEvaluationMixin {
+  late Root _root;
+  GameStateWithAnalysis? _gameStateWithAnalysis;
+  bool _isEngineInitialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final gamePrefs = ref.watch(gamePreferencesProvider);
+    if (gamePrefs.enableRealTimeAnalysis == true && !_isEngineInitialized) {
+      initEngineEvaluation();
+      _isEngineInitialized = true;
+    } else if (gamePrefs.enableRealTimeAnalysis == false && _isEngineInitialized) {
+      disposeEngineEvaluation();
+      _isEngineInitialized = false;
+    }
+  }
+
+  @override
+  EngineEvaluationPrefState get evaluationPrefs => ref.read(engineEvaluationPreferencesProvider);
+
+  @override
+  EngineEvaluationPreferences get evaluationPreferencesNotifier =>
+      ref.read(engineEvaluationPreferencesProvider.notifier);
+
+  @override
+  EvaluationService evaluationServiceFactory() => ref.read(evaluationServiceProvider);
+
+  @override
+  EvaluationMixinState get evaluationState => _gameStateWithAnalysis!;
+
+  @override
+  Root get positionTree => _root;
+
+  @override
+  void dispose() {
+    disposeEngineEvaluation();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ctrlProvider = gameControllerProvider(widget.gameId);
 
     ref.listen(
       ctrlProvider,
@@ -231,6 +307,13 @@ class GameBody extends ConsumerWidget {
             ? Duration.zero
             : boardPreferences.pieceAnimationDuration;
 
+        if (gamePrefs.enableRealTimeAnalysis == true) {
+          _root = Root.fromGame(gameState.game.toPgnGame());
+          _gameStateWithAnalysis = GameStateWithAnalysis(gameState);
+          requestEval();
+        } else {
+          _gameStateWithAnalysis = null;
+        }
         return FocusDetector(
           onFocusRegained: () {
             if (context.mounted) {
@@ -246,6 +329,29 @@ class GameBody extends ConsumerWidget {
             shouldEnableOnFocusGained: () => gameState.game.playable,
             child: GameLayout(
               key: boardKey,
+              engineGaugeBuilder: gamePrefs.enableRealTimeAnalysis == true && _gameStateWithAnalysis != null
+                  ? (context, orientation) => EngineGauge(
+                        displayMode: orientation == Orientation.portrait
+                            ? EngineGaugeDisplayMode.horizontal
+                            : EngineGaugeDisplayMode.vertical,
+                        params: (
+                          isLocalEngineAvailable: _gameStateWithAnalysis!.isEngineAvailable(evaluationPrefs),
+                          orientation: youAre,
+                          position: _gameStateWithAnalysis!.currentPosition,
+                          savedEval: _gameStateWithAnalysis!.currentPosition.eval,
+                          serverEval: null,
+                        ),
+                      )
+                  : null,
+              engineLines: gamePrefs.enableRealTimeAnalysis == true && _gameStateWithAnalysis != null
+                  ? EngineLines(
+                      onTapMove: (move) {
+                        ref.read(ctrlProvider.notifier).userMove(move);
+                      },
+                      savedEval: _gameStateWithAnalysis!.currentPosition.eval,
+                      isGameOver: _gameStateWithAnalysis!.currentPosition.isGameOver,
+                    )
+                  : null,
               boardSettingsOverrides: BoardSettingsOverrides(
                 animationDuration: animationDuration,
                 autoQueenPromotion: gameState.canAutoQueen,
