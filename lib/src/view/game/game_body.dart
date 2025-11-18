@@ -320,19 +320,24 @@ class _GameBodyState extends ConsumerState<GameBody>
             : boardPreferences.pieceAnimationDuration;
 
         if (gamePrefs.enableRealTimeAnalysis == true) {
+          final pgnNode = PgnNode<PgnNodeData>();
+          PgnNode<PgnNodeData> currentNode = pgnNode;
+          for (final step in gameState.game.steps.skip(1)) {
+            final newNode = PgnChildNode(
+              PgnNodeData(
+                san: step.sanMove!.san,
+              ),
+            );
+            currentNode.children.add(newNode);
+            currentNode = newNode;
+          }
           _root = Root.fromPgnGame(
             PgnGame(
               headers: {
                 'Variant': gameState.game.meta.variant.label,
                 if (gameState.game.initialFen != null) 'FEN': gameState.game.initialFen!,
               },
-              moves: PgnNode.fromSteps(
-                gameState.game.steps.map(
-                  (e) => PgnNodeData(
-                    san: e.sanMove?.san ?? '',
-                  ),
-                ),
-              ),
+              moves: pgnNode,
               comments: [],
             ),
           );
