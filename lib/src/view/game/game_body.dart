@@ -10,9 +10,9 @@ import 'package:lichess_mobile/src/model/account/account_repository.dart';
 import 'package:lichess_mobile/src/model/account/ongoing_game.dart';
 import 'package:lichess_mobile/src/model/common/id.dart';
 import 'package:lichess_mobile/src/model/common/node.dart';
-import 'package:lichess_mobile/src/model/common/socket.dart';
 import 'package:lichess_mobile/src/model/common/uci.dart';
 import 'package:lichess_mobile/src/model/common/speed.dart';
+import 'package:lichess_mobile/src/network/socket.dart';
 import 'package:lichess_mobile/src/model/engine/evaluation_mixin.dart';
 import 'package:lichess_mobile/src/model/engine/evaluation_preferences.dart';
 import 'package:lichess_mobile/src/model/engine/evaluation_service.dart';
@@ -143,13 +143,10 @@ class _GameBodyState extends ConsumerState<GameBody>
   bool get alwaysRequestCloudEval => false;
 
   @override
-  UciPath get currentPath {
-    final path = _root.pathAt(
-      _gameState!.stepCursor,
-      _gameState!.game.meta.variant,
-    );
-    return path;
-  }
+  UciPath get currentPath => UciPath.fromGame(
+        _gameState!.game,
+        _gameState!.stepCursor,
+      );
 
   @override
   Position get currentPosition => _gameState!.currentPosition;
@@ -164,7 +161,7 @@ class _GameBodyState extends ConsumerState<GameBody>
   @override
   EvaluationContext get evaluationContext => EvaluationContext(
         variant: _gameState!.game.meta.variant,
-        fen: _gameState!.game.initialFen,
+        initialPosition: _gameState!.game.initialPosition,
       );
 
   @override
@@ -236,7 +233,7 @@ class _GameBodyState extends ConsumerState<GameBody>
           clock: gameState.liveClock != null
               ? RepaintBoundary(
                   child: ValueListenableBuilder(
-                    key: blackClockKey,
+                    key: widget.blackClockKey,
                     valueListenable: gameState.liveClock!.black,
                     builder: (context, value, _) {
                       return Clock(
@@ -284,7 +281,7 @@ class _GameBodyState extends ConsumerState<GameBody>
           clock: gameState.liveClock != null
               ? RepaintBoundary(
                   child: ValueListenableBuilder(
-                    key: whiteClockKey,
+                    key: widget.whiteClockKey,
                     valueListenable: gameState.liveClock!.white,
                     builder: (context, value, _) {
                       return Clock(
@@ -321,7 +318,7 @@ class _GameBodyState extends ConsumerState<GameBody>
             : boardPreferences.pieceAnimationDuration;
 
         if (gamePrefs.enableRealTimeAnalysis == true) {
-          _root = Root.fromGame(gameState.game.toPgnGame);
+          _root = Root.fromPgnGame(gameState.game.toPgnGame);
           _gameState = gameState;
           requestEval();
         } else {
@@ -341,30 +338,31 @@ class _GameBodyState extends ConsumerState<GameBody>
           child: WakelockWidget(
             shouldEnableOnFocusGained: () => gameState.game.playable,
             child: GameLayout(
-              key: widget.boardKey,
-              engineGaugeBuilder: gamePrefs.enableRealTimeAnalysis == true && _gameState != null
-                  ? (context, orientation) => EngineGauge(
-                        displayMode: orientation == Orientation.portrait
-                            ? EngineGaugeDisplayMode.horizontal
-                            : EngineGaugeDisplayMode.vertical,
-                        params: (
-                          isLocalEngineAvailable: isEngineAvailable(evaluationPrefs),
-                          orientation: youAre,
-                          position: currentPosition,
-                          savedEval: currentPosition.eval,
-                          serverEval: null,
-                        ),
-                      )
-                  : null,
-              engineLines: gamePrefs.enableRealTimeAnalysis == true && _gameState != null
-                  ? EngineLines(
+              boardOverlay: Column(
+                children: [
+                  if (gamePrefs.enableRealTimeAnalysis == true && _gameState != null)
+                    EngineGauge(
+                      displayMode: Orientation.portrait == Orientation.portrait
+                          ? EngineGaugeDisplayMode.horizontal
+                          : EngineGaugeDisplayMode.vertical,
+                      params: (
+                        isLocalEngineAvailable: isEngineAvailable(evaluationPrefs),
+                        orientation: youAre,
+                        position: currentPosition,
+                        savedEval: currentPosition.eval,
+                        serverEval: null,
+                      ),
+                    ),
+                  if (gamePrefs.enableRealTimeAnalysis == true && _gameState != null)
+                    EngineLines(
                       onTapMove: (move) {
                         ref.read(ctrlProvider.notifier).userMove(move);
                       },
                       savedEval: currentPosition.eval,
                       isGameOver: currentPosition.isGameOver,
-                    )
-                  : null,
+                    ),
+                ],
+              ),
               boardSettingsOverrides: BoardSettingsOverrides(
                 animationDuration: animationDuration,
                 autoQueenPromotion: gameState.canAutoQueen,
@@ -474,8 +472,10 @@ class _GameBodyState extends ConsumerState<GameBody>
           if (context.mounted) {
             showAdaptiveDialog<void>(
               context: context,
-              builder: (context) =>
-                  GameResultDialog(id: gameId, onNewOpponentCallback: onNewOpponentCallback),
+              builder: (context) => GameResultDialog(
+                id: widget.gameId,
+                onNewOpponentCallback: widget.onNewOpponentCallback,
+              ),
               barrierDismissible: true,
             );
           }
@@ -491,7 +491,7 @@ class _GameBodyState extends ConsumerState<GameBody>
         final game = state.requireValue.game;
         if (game.meta.speed != Speed.correspondence && game.playable) {
           setAndroidBoardGesturesExclusion(
-            boardKey,
+            widget.boardKey,
             withImmersiveMode:
                 ref.read(boardPreferencesProvider).immersiveModeWhilePlaying ?? false,
           );
@@ -505,7 +505,7 @@ class _GameBodyState extends ConsumerState<GameBody>
         if (context.mounted) {
           showAdaptiveDialog<void>(
             context: context,
-            builder: (context) => _ClaimWinDialog(id: gameId),
+            builder: (context) => _ClaimWinDialog(id: widget.gameId),
             barrierDismissible: true,
           );
         }

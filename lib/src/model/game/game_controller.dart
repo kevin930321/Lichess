@@ -63,6 +63,7 @@ class GameController extends _$GameController {
 
   ChessClock? _clock;
   late SocketClient _socketClient;
+  SocketClient get socketClient => _socketClient;
 
   GameRepository get _gameRepository => ref.read(gameRepositoryProvider);
 
