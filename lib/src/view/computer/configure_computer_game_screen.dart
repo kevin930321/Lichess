@@ -65,8 +65,7 @@ class _ConfigureBody extends ConsumerWidget {
             const SizedBox(height: 24.0),
             _buildVariantSelector(context, ref, variant),
             const Spacer(),
-            FatButton(
-              semanticsLabel: 'Start Game',
+            FilledButton(
               onPressed: () {
                 Navigator.of(context, rootNavigator: true).push(
                   MaterialPageRoute(
