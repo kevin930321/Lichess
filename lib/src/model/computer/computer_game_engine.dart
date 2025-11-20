@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:dartchess/dartchess.dart';
-import 'package:lichess_mobile/src/binding.dart';
+import 'package:fast_immutable_collections/fast_immutable_collections.dart';
+import 'package:lichess_mobile/src/model/common/chess.dart';
 import 'package:lichess_mobile/src/model/engine/engine.dart';
-import 'package:lichess_mobile/src/model/engine/uci_protocol.dart';
 import 'package:lichess_mobile/src/model/engine/work.dart';
 import 'package:logging/logging.dart';
 import 'package:multistockfish/multistockfish.dart';
@@ -14,7 +14,6 @@ class ComputerGameEngine {
 
   final Logger _log;
   StockfishEngine? _engine;
-  final UCIProtocol _protocol = UCIProtocol();
 
   /// Initialize the Stockfish engine for computer games.
   Future<void> initialize() async {
@@ -29,10 +28,13 @@ class ComputerGameEngine {
       
       // Start the engine to ensure it's ready
       await _engine!.start(Work(
-        position: Chess.initial,
-        initialPositionEval: null,
         variant: Variant.standard,
+        threads: 1,
+        searchTime: const Duration(milliseconds: 100),
         multiPv: 1,
+        initialPosition: Chess.initial,
+        steps: IList(),
+        path: '',
       )).first;
       
       _engine!.stop();
@@ -46,10 +48,10 @@ class ComputerGameEngine {
   /// Get the best move for the current position at the specified difficulty level.
   /// 
   /// Difficulty levels 1-8 are mapped to Stockfish parameters:
-  /// - Level 1-2: Depth 1-3, Skill Level 0-3 (Beginner)
-  /// - Level 3-4: Depth 5-8, Skill Level 5-10 (Intermediate)
-  /// - Level 5-6: Depth 10-13, Skill Level 12-15 (Advanced)
-  /// - Level 7-8: Depth 15-20, Skill Level 17-20 (Expert)
+  /// - Level 1-2: Depth 1-3 (Beginner)
+  /// - Level 3-4: Depth 5-8 (Intermediate)
+  /// - Level 5-6: Depth 10-13 (Advanced)
+  /// - Level 7-8: Depth 15-20 (Expert)
   Future<Move?> getMove(Position position, int level, Variant variant) async {
     if (_engine == null) {
       await initialize();
@@ -59,42 +61,36 @@ class ComputerGameEngine {
       throw StateError('Engine failed to initialize');
     }
 
-    final (depth, skillLevel) = _getLevelParameters(level);
+    final depth = _getDepthForLevel(level);
+    final searchTime = Duration(milliseconds: 50 * depth);
 
-    _log.info('Getting move at level $level (depth: $depth, skill: $skillLevel)');
+    _log.info('Getting move at level $level (depth: $depth, time: ${searchTime.inMilliseconds}ms)');
 
     try {
       // Create work for the engine
       final work = Work(
-        position: position,
-        initialPositionEval: null,
         variant: variant,
+        threads: 1,
+        searchTime: searchTime,
         multiPv: 1,
+        initialPosition: position,
+        steps: IList(),
+        path: '',
       );
 
-      // Start engine computation with level-specific parameters
+      // Start engine computation
       final evalStream = _engine!.start(work);
-
-      // Set UCI options for difficulty
-      // Note: Actual UCI option setting would need to be done via engine stdin
-      // For now, we'll use depth limiting in the work object
 
       Move? bestMove;
       int pvCount = 0;
 
       // Collect eval results up to target depth
       await for (final (_, eval) in evalStream) {
-        if (eval.depth >= depth) {
+        if (eval.depth >= depth || pvCount > 50) {
           bestMove = eval.bestMove;
           break;
         }
         pvCount++;
-        
-        // Safety: stop after reasonable number of updates
-        if (pvCount > 100) {
-          bestMove = eval.bestMove;
-          break;
-        }
       }
 
       _engine!.stop();
@@ -111,18 +107,18 @@ class ComputerGameEngine {
     }
   }
 
-  /// Map difficulty level (1-8) to engine depth and skill level.
-  (int depth, int skillLevel) _getLevelParameters(int level) {
+  /// Map difficulty level (1-8) to engine search depth.
+  int _getDepthForLevel(int level) {
     return switch (level) {
-      1 => (1, 0),   // Beginner - very weak
-      2 => (3, 3),   // Beginner
-      3 => (5, 5),   // Novice
-      4 => (8, 10),  // Novice/Intermediate
-      5 => (10, 12), // Intermediate
-      6 => (13, 15), // Advanced
-      7 => (15, 17), // Expert
-      8 => (20, 20), // Expert - full strength
-      _ => (10, 10), // Default to medium
+      1 => 1,   // Beginner - very weak
+      2 => 3,   // Beginner
+      3 => 5,   // Novice
+      4 => 8,   // Novice/Intermediate
+      5 => 10,  // Intermediate
+      6 => 13,  // Advanced
+      7 => 15,  // Expert
+      8 => 20,  // Expert - full strength
+      _ => 10,  // Default to medium
     };
   }
 
