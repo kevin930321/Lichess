@@ -1,5 +1,4 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:label="Lichess"
@@ -8,6 +7,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:resizeableActivity="false"
         android:enableOnBackInvokedCallback="true"
+        android:allowBackup="false"
         android:fullBackupContent="@xml/backup_rules">
 
         <meta-data
@@ -53,18 +53,6 @@
                 <!-- Game with pov -->
                 <data android:pathPattern="/......../black" />
                 <data android:pathPattern="/......../white" />
-            </intent-filter>
-        </activity>
-
-        <activity
-            android:name="net.openid.appauth.RedirectUriReceiverActivity"
-            android:exported="true"
-            tools:node="replace">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="${appAuthRedirectScheme}" android:host="login-callback" />
             </intent-filter>
         </activity>
         <receiver android:exported="false"
