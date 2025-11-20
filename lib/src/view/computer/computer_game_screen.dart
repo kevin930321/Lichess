@@ -61,7 +61,7 @@ class _ComputerGameScreenState extends ConsumerState<ComputerGameScreen> {
           if (context.mounted) {
             showAdaptiveDialog<void>(
               context: context,
-              builder: (context) => ComputerGameResultDialog(
+              builder: (context) => OverTheBoardGameResultDialog(
                 game: newGameState.game,
                 onRematch: () {
                   Navigator.pop(context);
@@ -318,26 +318,6 @@ class _Player extends ConsumerWidget {
           : null,
       materialDifferenceFormat: boardPreferences.materialDifferenceFormat,
       shouldLinkToUserProfile: false,
-    );
-  }
-}
-
-/// Game result dialog for computer games.
-class ComputerGameResultDialog extends StatelessWidget {
-  const ComputerGameResultDialog({
-    required this.game,
-    required this.onRematch,
-    super.key,
-  });
-
-  final dynamic game; // OverTheBoardGame
-  final VoidCallback onRematch;
-
-  @override
-  Widget build(BuildContext context) {
-    return GameResultDialog(
-      game: game,
-      onRematchRequest: onRematch,
     );
   }
 }
