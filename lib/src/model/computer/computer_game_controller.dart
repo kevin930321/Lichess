@@ -2,6 +2,7 @@ import 'package:dartchess/dartchess.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:lichess_mobile/src/model/common/chess.dart';
+import 'package:lichess_mobile/src/model/common/chess960.dart';
 import 'package:lichess_mobile/src/model/common/perf.dart';
 import 'package:lichess_mobile/src/model/common/service/move_feedback.dart';
 import 'package:lichess_mobile/src/model/common/speed.dart';
@@ -10,7 +11,6 @@ import 'package:lichess_mobile/src/model/game/game.dart';
 import 'package:lichess_mobile/src/model/game/game_status.dart';
 import 'package:lichess_mobile/src/model/game/material_diff.dart';
 import 'package:lichess_mobile/src/model/game/over_the_board_game.dart';
-import 'package:lichess_mobile/src/model/game/player.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'computer_game_controller.freezed.dart';
@@ -55,13 +55,6 @@ class ComputerGameController extends _$ComputerGameController {
         speed: Speed.correspondence, // Use correspondence for untimed games
         perf: Perf.fromVariantAndSpeed(variant, Speed.correspondence),
       ),
-      // Set white and black players with AI level for opponent
-      white: playerSide == Side.white
-          ? const Player()
-          : Player(aiLevel: level, name: 'Stockfish'),
-      black: playerSide == Side.black
-          ? const Player()
-          : Player(aiLevel: level, name: 'Stockfish'),
     );
 
     state = ComputerGameState(
@@ -259,7 +252,7 @@ class ComputerGameState with _$ComputerGameState {
             rated: false,
             variant: Variant.standard,
             speed: Speed.correspondence,
-            perf: Perf.standard,
+            perf: Perf.fromVariantAndSpeed(Variant.standard, Speed.correspondence),
           ),
         ),
         stepCursor: 0,
