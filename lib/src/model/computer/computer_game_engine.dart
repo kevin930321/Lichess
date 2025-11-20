@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dartchess/dartchess.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:lichess_mobile/src/model/common/chess.dart';
+import 'package:lichess_mobile/src/model/common/uci.dart';
 import 'package:lichess_mobile/src/model/engine/engine.dart';
 import 'package:lichess_mobile/src/model/engine/work.dart';
 import 'package:logging/logging.dart';
@@ -34,7 +35,7 @@ class ComputerGameEngine {
         multiPv: 1,
         initialPosition: Chess.initial,
         steps: IList(),
-        path: '',
+        path: UciPath.empty,
       )).first;
       
       _engine!.stop();
@@ -75,7 +76,7 @@ class ComputerGameEngine {
         multiPv: 1,
         initialPosition: position,
         steps: IList(),
-        path: '',
+        path: UciPath.empty,
       );
 
       // Start engine computation
