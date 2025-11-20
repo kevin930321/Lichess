@@ -230,7 +230,7 @@ class ComputerGameController extends _$ComputerGameController {
 }
 
 @freezed
-class ComputerGameState with _$ComputerGameState {
+abstract class ComputerGameState with _$ComputerGameState {
   const ComputerGameState._();
 
   const factory ComputerGameState({
