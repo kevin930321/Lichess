@@ -44,9 +44,13 @@ jobs:
         run: rm -f pubspec.lock
 
       - name: Install dependencies
-        run: |\n          echo "::group::Flutter Pub Get"
+        run: |
+          echo "::group::Flutter Pub Get"
           flutter pub get
           echo "::endgroup::"
+
+      - name: Clean build_runner cache
+        run: dart run build_runner clean
 
       - name: Code generation
         run: |
