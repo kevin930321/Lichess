@@ -6,9 +6,6 @@ import 'package:lichess_mobile/src/model/user/user.dart';
 import 'package:lichess_mobile/src/network/cookie_manager.dart';
 import 'package:lichess_mobile/src/network/http.dart';
 import 'package:logging/logging.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-
-part 'auth_repository.g.dart';
 
 class AuthRepository {
   AuthRepository(LichessClient client, Ref ref)
