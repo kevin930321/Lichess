@@ -1,46 +1,59 @@
-name: Android Debug APK Build
+name: Manual Build & Publish Release APK
 
 on:
   workflow_dispatch:
+#    inputs:
+#      tag:
+#        description: '版本號'
+#        required: true
+#        type: string
 
 jobs:
-  build:
+  build-and-release:
     runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        cache: gradle
-      
-    - name: Build debug APK
-      run: |
-        cd LightNovelLibrary
-        ./gradlew assembleDebug --stacktrace
-        
-    - name: Upload debug APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: linovelib-debug-apk
-        path: LightNovelLibrary/app/build/outputs/apk/debug/*.apk
-        retention-days: 30
-        
-    - name: Get APK info
-      run: |
-        cd LightNovelLibrary
-        APK_PATH=$(find app/build/outputs/apk/debug -name "*.apk" -type f)
-        if [ -n "$APK_PATH" ]; then
-          echo "✅ APK built successfully:"
-          ls -lh $APK_PATH
-          APK_SIZE=$(du -h $APK_PATH | cut -f1)
-          echo "📦 APK Size: $APK_SIZE"
-        else
-          echo "❌ No APK found"
-          exit 1
-        fi
+    permissions:
+      contents: write
 
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+#      - name: Decode Release Keystore
+#        run: |
+#          echo "Decoding keystore from secrets..."
+#          echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 --decode > release-key.jks
+#          echo "Keystore decoded successfully."
+      
+      - name: Make Gradle executable
+        run: chmod +x ./gradlew
+
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+
+ #     - name: Clean project
+ #       run: ./gradlew clean
+
+      - name: Build Signed Release APK
+        run: ./gradlew assembleDebug
+#        env:
+#          KEYSTORE_PATH: ${{ github.workspace }}/release-key.jks
+#          KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+#          KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+#          KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+#          APP_VERSION_NAME: ${{ github.event.inputs.tag }}
+
+      - name: Create Release and Upload APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag }}
+          files: app/build/outputs/apk/release/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
