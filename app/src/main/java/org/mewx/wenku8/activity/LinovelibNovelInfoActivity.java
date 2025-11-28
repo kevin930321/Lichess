@@ -258,7 +258,7 @@ public class LinovelibNovelInfoActivity extends BaseMaterialActivity {
         if (GlobalConfig.testInLocalBookshelf(novelId)) {
             fabBookmark.setImageResource(R.drawable.ic_favorate_pressed);
         } else {
-            fabBookmark.setImageResource(R.drawable.ic_favorate_normal);
+            fabBookmark.setImageResource(R.drawable.ic_favorate);
         }
         fabBookmark.setColorFilter(getResources().getColor(R.color.default_white), PorterDuff.Mode.SRC_ATOP);
     }
