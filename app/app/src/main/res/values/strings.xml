@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">嗶哩輕小說</string>
+    
+    <!-- Tab titles -->
+    <string name="tab_recommend">推薦</string>
+    <string name="tab_favorites">書架</string>
+    
+    <!-- Novel detail -->
+    <string name="author">作者：%s</string>
+    <string name="illustrator">插畫：%s</string>
+    <string name="translator">翻譯：%s</string>
+    <string name="rating">評分：%s</string>
+    <string name="status">狀態：%s</string>
+    <string name="btn_start_reading">開始閱讀</string>
+    <string name="btn_add_favorite">加入書架</string>
+    <string name="btn_remove_favorite">移除書架</string>
+    
+    <!-- Chapter list -->
+    <string name="chapter_count">共 %d 章</string>
+    <string name="volume_title">第 %s 卷</string>
+    
+    <!-- Reader -->
+    <string name="prev_chapter">上一章</string>
+    <string name="next_chapter">下一章</string>
+    <string name="chapter_list">目錄</string>
+    <string name="loading">加載中...</string>
+    <string name="chapter_loaded">章節已加載</string>
+    
+    <!-- Search -->
+    <string name="search_hint">搜索小說...</string>
+    <string name="search_history">搜索歷史</string>
+    <string name="clear_history">清除歷史</string>
+    
+    <!-- Messages -->
+    <string name="favorite_added">已加入書架</string>
+    <string name="favorite_removed">已從書架移除</string>
+    <string name="no_network">無網路連接</string>
+    <string name="load_error">加載失敗，請重試</string>
+    <string name="no_data">暫無數據</string>
+    <string name="empty_favorites">書架是空的，快去收藏小說吧</string>
+    
+    <!-- Settings -->
+    <string name="settings">設置</string>
+    <string name="font_size">字體大小</string>
+    <string name="background_color">背景顏色</string>
+    <string name="brightness">亮度</string>
+</resources>
